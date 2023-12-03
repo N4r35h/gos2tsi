@@ -1,4 +1,4 @@
-package converter
+package gos2tsi
 
 import (
 	"go/doc"

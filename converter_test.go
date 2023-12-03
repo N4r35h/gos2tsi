@@ -1,13 +1,12 @@
-package main
+package gos2tsi
 
 import (
 	"testing"
 
-	"github.com/N4r35h/gos2tsi/converter"
 	"github.com/N4r35h/gos2tsi/examplestructs"
 )
 
-var c *converter.Converter = converter.New()
+var c *Converter = New()
 
 func TestSimpleStruct1(t *testing.T) {
 	ps := c.ParseStruct(examplestructs.SimpleStruct1{})
