@@ -174,6 +174,7 @@ func (c *Converter) ParseStructsInPackage(pkgPath, RequiredStruct string, IsSlic
 					}
 				}
 				if parsedStruct.Required {
+					parsedStruct.IsSlice = RequestedStruct.IsSlice
 					RequestedStruct = parsedStruct
 				}
 				/*
