@@ -10,11 +10,22 @@ import (
 )
 
 var GoTypeToTSType = map[string]string{
-	"uint":    "number",
-	"float64": "number",
-	"int":     "number",
-	"bool":    "boolean",
-	"string":  "string",
+	"bool":      "boolean",
+	"interface": "any",
+	"any":       "any",
+	"string":    "string",
+	"int":       "number",
+	"int8":      "number",
+	"int16":     "number",
+	"int32":     "number",
+	"int64":     "number",
+	"uint":      "number",
+	"uint8":     "number",
+	"uint16":    "number",
+	"uint32":    "number",
+	"uint64":    "number",
+	"float32":   "number",
+	"float64":   "number",
 }
 
 type ParsedField struct {
