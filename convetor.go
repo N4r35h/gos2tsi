@@ -22,7 +22,6 @@ type ParsedField struct {
 	Tag       string
 	TSName    string
 	TSType    string
-	Exposed   bool
 	IsSlice   bool
 	RefStruct ParsedStruct
 }
@@ -143,26 +142,23 @@ func (c *Converter) ParseStructsInPackage(pkgPath, RequiredStruct string, IsSlic
 							isTypeValid = true
 						}
 					}
-					if fieldName != "-" {
-						pf.Exposed = true
-					}
 					pf.IsSlice = reflect.TypeOf(st.Field(i).Type()).String() == "*types.Slice"
-					if !isTypeValid && len(typeNameSegments) > 1 && !pf.Var.Embedded() {
-						FieldTypeName := pf.Var.Type().String()
-						if pf.IsSlice {
-							FieldTypeName = strings.Replace(FieldTypeName, "[]", "", 1)
-						}
-						DotSepFSPN := strings.Split(FieldTypeName, ".")
-						StructName := DotSepFSPN[len(DotSepFSPN)-1]
-						fieldPackagePath := strings.Replace(FieldTypeName, "."+StructName, "", 1)
-						refStruct := c.ParseStructsInPackage(fieldPackagePath, StructName, pf.IsSlice)
-						refStruct.Required = true
-						refStruct.IsSlice = pf.IsSlice
-						pf.RefStruct = refStruct
-					}
 					pf.TSName = fieldName
 					pf.TSType = strings.ReplaceAll(typeName, "[]", "")
 					if pf.TSName != "-" {
+						if !isTypeValid && len(typeNameSegments) > 1 && !pf.Var.Embedded() {
+							FieldTypeName := pf.Var.Type().String()
+							if pf.IsSlice {
+								FieldTypeName = strings.Replace(FieldTypeName, "[]", "", 1)
+							}
+							DotSepFSPN := strings.Split(FieldTypeName, ".")
+							StructName := DotSepFSPN[len(DotSepFSPN)-1]
+							fieldPackagePath := strings.Replace(FieldTypeName, "."+StructName, "", 1)
+							refStruct := c.ParseStructsInPackage(fieldPackagePath, StructName, pf.IsSlice)
+							refStruct.Required = true
+							refStruct.IsSlice = pf.IsSlice
+							pf.RefStruct = refStruct
+						}
 						parsedStruct.Fields = append(parsedStruct.Fields, pf)
 					}
 				}
