@@ -70,7 +70,9 @@ func (c *Converter) ensureGenericPopulations(structName string) {
 	if len(genericPopulations) > 1 {
 		for _, gp := range strings.Split(strings.ReplaceAll(genericPopulations[1], "]", ""), ",") {
 			fullNameSegments := strings.Split(gp, ".")
-			c.ParseStructsInPackage(fullNameSegments[0], fullNameSegments[1], false)
+			if len(fullNameSegments) > 1 {
+				c.ParseStructsInPackage(fullNameSegments[0], fullNameSegments[1], false)
+			}
 		}
 	}
 }
