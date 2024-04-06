@@ -132,6 +132,9 @@ func (c *Converter) ParseStructsInPackage(pkgPath, RequiredStruct string, IsSlic
 					}
 					fieldName := pf.Var.Name()
 					typeName := pf.Var.Type().String()
+					if strings.HasPrefix(typeName, "[]") {
+						typeName = strings.Replace(typeName, "[]", "", 1)
+					}
 					isTypeValid := false
 					if convertedTypeName, ok := GoTypeToTSType[typeName]; ok {
 						typeName = convertedTypeName
@@ -155,11 +158,11 @@ func (c *Converter) ParseStructsInPackage(pkgPath, RequiredStruct string, IsSlic
 					}
 					pf.IsSlice = reflect.TypeOf(st.Field(i).Type()).String() == "*types.Slice"
 					pf.TSName = fieldName
-					pf.TSType = strings.ReplaceAll(typeName, "[]", "")
+					pf.TSType = typeName
 					if pf.TSName != "-" {
 						if !isTypeValid && len(typeNameSegments) > 1 && !pf.Var.Embedded() {
 							FieldTypeName := pf.Var.Type().String()
-							if pf.IsSlice {
+							if pf.IsSlice && strings.HasPrefix(FieldTypeName, "[]") {
 								FieldTypeName = strings.Replace(FieldTypeName, "[]", "", 1)
 							}
 							DotSepFSPN := strings.Split(FieldTypeName, ".")
@@ -233,20 +236,63 @@ func (c *Converter) GetStructAsInterfaceString(ps ParsedStruct) string {
 	for _, v := range ps.Fields {
 		if v.Var.Embedded() {
 			for _, f := range c.Structs[v.Var.Pkg().Path()+"."+v.TSName].Fields {
-				toRet += "\n" + c.Indent + f.TSName + ": " + f.TSType
-				if f.IsSlice {
-					toRet += "[]"
-				}
+				toRet += c.GetFieldAsString(f)
 			}
 		} else {
-			toRet += "\n" + c.Indent + v.TSName + ": " + v.TSType
-			if v.IsSlice {
-				toRet += "[]"
-			}
+			toRet += c.GetFieldAsString(v)
 		}
 	}
 	toRet += "\n}"
 	return toRet
+}
+
+func (c *Converter) GetFieldAsString(pf ParsedField) string {
+	toRet := "\n" + c.Indent + pf.TSName + ": " + c.postProcessTSTypeName(pf.TSType)
+	if pf.IsSlice {
+		toRet += "[]"
+	}
+	return toRet
+}
+
+func (c *Converter) postProcessTSTypeName(TSType string) string {
+	if strings.HasPrefix(TSType, "map[") {
+		return c.GetTSTypeFromMap(TSType)
+	}
+	return TSType
+}
+
+func (c *Converter) GetTSTypeFromMap(TSType string) string {
+	arrayIndication := strings.Split(TSType, "map[")[0]
+	if arrayIndication != "" {
+		TSType = strings.Replace(TSType, arrayIndication, "", 1)
+	}
+	TSType = strings.Replace(TSType, "map[", "", 1)
+	TSTypeSegments := strings.Split(TSType, "]")
+	KeyType := TSTypeSegments[0]
+	if c.isMap(KeyType) {
+		KeyType = c.GetTSTypeFromMap(KeyType)
+	}
+	if convertedTypeName, ok := GoTypeToTSType[KeyType]; ok {
+		KeyType = convertedTypeName
+	}
+	ValueType := strings.Join(TSTypeSegments[1:], "]")
+	if c.isMap(ValueType) {
+		ValueType = c.GetTSTypeFromMap(ValueType)
+	}
+	if convertedTypeName, ok := GoTypeToTSType[ValueType]; ok {
+		ValueType = convertedTypeName
+	}
+	return `{[key: ` + KeyType + `]: ` + ValueType + `}` + arrayIndication
+}
+
+func (c *Converter) isMap(i string) bool {
+	if strings.HasPrefix(i, "[]") {
+		i = strings.Replace(i, "[]", "", 1)
+	}
+	if strings.HasPrefix(i, "map[") {
+		return true
+	}
+	return false
 }
 
 func (c *Converter) GetFormattedTSComment(commentContent string) string {
