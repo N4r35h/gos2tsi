@@ -236,15 +236,67 @@ func (c *Converter) GetStructAsInterfaceString(ps ParsedStruct) string {
 	toRet += "export interface " + GetFormattedInterfaceName(ps.Name) + " {"
 	for _, v := range ps.Fields {
 		if v.Var.Embedded() {
-			for _, f := range c.Structs[v.Var.Pkg().Path()+"."+v.TSName].Fields {
+			pkgPath, structName := c.GetPackagePathAndStructNameFromFullDenotation(v.Var.Type().String())
+			ps := c.ParseStructsInPackage(pkgPath, structName, v.IsSlice)
+			ps = c.SetGenericPopulationsToFields(ps)
+			for _, f := range ps.Fields {
 				toRet += c.GetFieldAsString(f)
 			}
+			// embeddedPackageName := v.Var.Pkg().Path() + "." + v.TSName
+			// if strings.Contains(v.TSName, ".") {
+			// 	embeddedPackageName = v.TSName
+			// }
+			// for _, f := range c.Structs[embeddedPackageName].Fields {
+			// 	toRet += c.GetFieldAsString(f)
+			// }
 		} else {
 			toRet += c.GetFieldAsString(v)
 		}
 	}
 	toRet += "\n}"
 	return toRet
+}
+
+func (c *Converter) GetPackagePathAndStructNameFromFullDenotation(fullPath string) (string, string) {
+	woGenerics := strings.Split(fullPath, "[")[0]
+	woGenericSegments := strings.Split(woGenerics, ".")
+	StructName := woGenericSegments[len(woGenericSegments)-1]
+	pkgPath := strings.Replace(woGenerics, StructName, "", 1)
+	StructNameWithGenerics := strings.Replace(fullPath, pkgPath, "", 1)
+	return pkgPath[:len(pkgPath)-1], StructNameWithGenerics
+}
+
+func (c *Converter) SetGenericPopulationsToFields(ps ParsedStruct) ParsedStruct {
+	if !strings.Contains(ps.Name, "[") {
+		return ps
+	}
+	var replaceMentMap map[string]string = make(map[string]string)
+	genericSegments := strings.Split(ps.Name, "[")
+	generics := strings.Replace(genericSegments[1], "]", "", 1)
+	genericParts := strings.Split(generics, ",")
+	for i, v := range genericParts {
+		genericPartKey := strings.Split(strings.Trim(v, " "), " ")[0]
+		replaceMentMap[genericPartKey] = ps.GenericPopulations[i].TSType
+	}
+	for i, field := range ps.Fields {
+		typeTokens := strings.Split(field.TSType, "[")
+		var reconstructed []string
+		for _, tt := range typeTokens {
+			typeTokens2 := strings.Split(tt, "]")
+			var reconstructed2 []string
+			for _, tt2 := range typeTokens2 {
+				for k, v := range replaceMentMap {
+					if tt2 == k {
+						tt2 = v
+					}
+				}
+				reconstructed2 = append(reconstructed2, tt2)
+			}
+			reconstructed = append(reconstructed, strings.Join(reconstructed2, "]"))
+		}
+		ps.Fields[i].TSType = strings.Join(reconstructed, "[")
+	}
+	return ps
 }
 
 func (c *Converter) GetFieldAsString(pf ParsedField) string {

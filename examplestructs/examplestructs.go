@@ -1,6 +1,11 @@
 package examplestructs
 
-import "time"
+import (
+	"time"
+
+	"github.com/N4r35h/gos2tsi/exstructpkg2"
+	"github.com/N4r35h/gos2tsi/exstructpkg3"
+)
 
 type SimpleStruct1 struct {
 	StringField    string  `json:"string_field"`
@@ -108,4 +113,11 @@ type MapStruct struct {
 	MapStringPrimitiveStruct map[string]PrimitiveStruct              `json:"map_string_primitive_struct"`
 	MapOfMapsOfMaps          map[string]map[string]map[string]string `json:"map_of_maps_of_maps"`
 	MapOfArrayOfMaps         map[string][]map[string]string          `json:"map_of_arrays_of_maps"`
+}
+
+type StructWithEmbeddedGenericStruct struct {
+	SimpleStruct
+	exstructpkg3.SingleGenericStructPkg3[exstructpkg2.SimpleStructPkg2, SimpleStruct]
+	StringArray []string
+	StructArray []string
 }
