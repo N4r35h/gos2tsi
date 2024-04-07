@@ -97,6 +97,7 @@ func (c *Converter) ParseStructsInPackage(pkgPath, RequiredStruct string, IsSlic
 		rs.Required = true
 		rs.IsSlice = RequestedStruct.IsSlice
 		c.Structs[pkgPath+"."+removeGenericsPartFromStructName(RequiredStruct)] = rs
+		rs.GenericPopulations = c.getGenericPopulations(RequiredStruct)
 		return rs
 	}
 	cfg := &packages.Config{
