@@ -76,12 +76,18 @@ func (c *Converter) ParseStruct(interf interface{}) ParsedStruct {
 }
 
 func (c *Converter) ensureGenericPopulations(structName string) {
-	genericPopulations := strings.Split(structName, "[")
+	arrayTrimmedStructName := strings.Trim(structName, "[]")
+	genericPopulations := strings.SplitN(arrayTrimmedStructName, "[", 2)
 	if len(genericPopulations) > 1 {
-		for _, gp := range strings.Split(strings.ReplaceAll(genericPopulations[1], "]", ""), ",") {
-			fullNameSegments := strings.Split(gp, ".")
+		closingBracketTrimmed := strings.Trim(genericPopulations[1], "]")
+		for _, gp := range strings.Split(closingBracketTrimmed, ",") {
+			arrayTrimmed := strings.Trim(gp, "[]")
+			fullNameSegments := strings.Split(arrayTrimmed, ".")
 			if len(fullNameSegments) > 1 {
-				c.ParseStructsInPackage(fullNameSegments[0], fullNameSegments[1], false)
+				isSlice := strings.HasPrefix(gp, "[]")
+				pkgPath := strings.Join(fullNameSegments[:len(fullNameSegments)-1], ".")
+				structName := fullNameSegments[len(fullNameSegments)-1]
+				c.ParseStructsInPackage(pkgPath, structName, isSlice)
 			}
 		}
 	}
