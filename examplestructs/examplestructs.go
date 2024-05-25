@@ -121,3 +121,9 @@ type StructWithEmbeddedGenericStruct struct {
 	StringArray []string
 	StructArray []string
 }
+
+type StructWithInlineStruct struct {
+	InlineStructData struct {
+		Test string `json:"test"`
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/N4r35h/gos2tsi/examplestructs"
+	"github.com/tompston/gut"
 )
 
 var c *Converter = New()
@@ -273,5 +274,18 @@ StructArray: string[]
 	if op != expected {
 		t.Errorf(expected)
 		t.Errorf(op)
+	}
+}
+
+func TestStructWithInlineStruct(t *testing.T) {
+
+	ps := c.ParseStruct(examplestructs.StructWithInlineStruct{})
+	op := c.GetStructAsInterfaceString(ps)
+	op2 := gut.Convert(examplestructs.StructWithInlineStruct{})
+	expected := ``
+	if op != expected {
+		t.Errorf(expected)
+		t.Errorf(op)
+		t.Errorf(op2)
 	}
 }
