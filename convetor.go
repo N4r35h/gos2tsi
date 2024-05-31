@@ -96,14 +96,15 @@ func (c *Converter) ensureGenericPopulations(structName string) {
 func (c *Converter) ParseStructsInPackage(pkgPath, RequiredStruct string, IsSlice bool) ParsedStruct {
 	RequestedStruct := ParsedStruct{}
 	RequestedStruct.IsSlice = IsSlice
+	RequestedStruct.GenericPopulations = c.getGenericPopulations(RequiredStruct)
 	c.ensureGenericPopulations(RequiredStruct)
 	_, exists := c.AlreadyParsedPackage[pkgPath]
 	if exists {
 		rs := c.Structs[pkgPath+"."+removeGenericsPartFromStructName(RequiredStruct)]
 		rs.Required = true
-		rs.IsSlice = RequestedStruct.IsSlice
 		c.Structs[pkgPath+"."+removeGenericsPartFromStructName(RequiredStruct)] = rs
-		rs.GenericPopulations = c.getGenericPopulations(RequiredStruct)
+		rs.IsSlice = RequestedStruct.IsSlice
+		rs.GenericPopulations = RequestedStruct.GenericPopulations
 		return rs
 	}
 	cfg := &packages.Config{
@@ -206,13 +207,18 @@ func (c *Converter) ParseStructsInPackage(pkgPath, RequiredStruct string, IsSlic
 
 func (c *Converter) getGenericPopulations(structName string) []ParsedField {
 	toRet := []ParsedField{}
-	structNameSegments := strings.Split(structName, "[")
-	if len(structNameSegments) > 1 {
-		genericPopulations := strings.Replace(structNameSegments[1], "]", "", 1)
-		for _, v := range strings.Split(genericPopulations, ",") {
-			structSegments := strings.Split(v, ".")
+	arrayTrimmedStructName := strings.Trim(structName, "[]")
+	genericPopulations := strings.SplitN(arrayTrimmedStructName, "[", 2)
+	if len(genericPopulations) > 1 {
+		closingBracketTrimmed := strings.Trim(genericPopulations[1], "]")
+		for _, gp := range strings.Split(closingBracketTrimmed, ",") {
+			arrayTrimmed := strings.Trim(gp, "[]")
+			fullNameSegments := strings.Split(arrayTrimmed, ".")
+			isSlice := strings.HasPrefix(gp, "[]")
+			fieldName := fullNameSegments[len(fullNameSegments)-1]
 			toRet = append(toRet, ParsedField{
-				TSType: structSegments[len(structSegments)-1],
+				IsSlice: isSlice,
+				TSType:  fieldName,
 			})
 		}
 	}
