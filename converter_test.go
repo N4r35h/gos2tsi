@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/N4r35h/gos2tsi/examplestructs"
-	"github.com/tompston/gut"
 )
 
 var c *Converter = New()
@@ -85,7 +84,7 @@ test: string
 		t.Errorf(expected)
 		t.Errorf(op)
 	}
-	if ps.IsSlice != true {
+	if ps.IsSlice != 1 {
 		t.Errorf("ps.IsSlice must be true")
 	}
 }
@@ -307,11 +306,22 @@ func TestStructWithInlineStruct(t *testing.T) {
 
 	ps := c.ParseStruct(examplestructs.StructWithInlineStruct{})
 	op := c.GetStructAsInterfaceString(ps)
-	op2 := gut.Convert(examplestructs.StructWithInlineStruct{})
 	expected := ``
 	if op != expected {
 		t.Errorf(expected)
 		t.Errorf(op)
-		t.Errorf(op2)
+	}
+}
+
+func Test3DSlice(t *testing.T) {
+	ps := c.ParseStruct(examplestructs.Slice3D{})
+	op := c.GetStructAsInterfaceString(ps)
+	expected := `export interface Slice3D {
+String3DSlice: string[][]
+Struct3DSlice: SimpleStruct[][]
+}`
+	if op != expected {
+		t.Errorf(expected)
+		t.Errorf(op)
 	}
 }

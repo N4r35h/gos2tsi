@@ -33,7 +33,7 @@ type ParsedField struct {
 	Tag       string
 	TSName    string
 	TSType    string
-	IsSlice   bool
+	IsSlice   int
 	RefStruct ParsedStruct
 }
 
@@ -44,7 +44,7 @@ type ParsedStruct struct {
 	Name               string
 	Required           bool
 	Fields             []ParsedField
-	IsSlice            bool
+	IsSlice            int
 	GenericPopulations []ParsedField
 }
 
@@ -65,9 +65,9 @@ func New() *Converter {
 
 func (c *Converter) ParseStruct(interf interface{}) ParsedStruct {
 	reflectType := reflect.TypeOf(interf)
-	IsSlice := false
+	IsSlice := 0
 	if reflectType.Kind() == reflect.Slice {
-		IsSlice = true
+		IsSlice = 1
 		reflectType = reflectType.Elem()
 	}
 	pkgPath := reflectType.PkgPath()
@@ -84,7 +84,10 @@ func (c *Converter) ensureGenericPopulations(structName string) {
 			arrayTrimmed := strings.Trim(gp, "[]")
 			fullNameSegments := strings.Split(arrayTrimmed, ".")
 			if len(fullNameSegments) > 1 {
-				isSlice := strings.HasPrefix(gp, "[]")
+				isSlice := 0
+				if strings.HasPrefix(gp, "[]") {
+					isSlice = 1
+				}
 				pkgPath := strings.Join(fullNameSegments[:len(fullNameSegments)-1], ".")
 				structName := fullNameSegments[len(fullNameSegments)-1]
 				c.ParseStructsInPackage(pkgPath, structName, isSlice)
@@ -93,7 +96,7 @@ func (c *Converter) ensureGenericPopulations(structName string) {
 	}
 }
 
-func (c *Converter) ParseStructsInPackage(pkgPath, RequiredStruct string, IsSlice bool) ParsedStruct {
+func (c *Converter) ParseStructsInPackage(pkgPath, RequiredStruct string, IsSlice int) ParsedStruct {
 	RequestedStruct := ParsedStruct{}
 	RequestedStruct.IsSlice = IsSlice
 	RequestedStruct.GenericPopulations = c.getGenericPopulations(RequiredStruct)
@@ -140,8 +143,12 @@ func (c *Converter) ParseStructsInPackage(pkgPath, RequiredStruct string, IsSlic
 					}
 					fieldName := pf.Var.Name()
 					typeName := pf.Var.Type().String()
+					FieldTypeName := pf.Var.Type().String()
+					if reflect.TypeOf(st.Field(i).Type()).String() == "*types.Slice" {
+						pf.IsSlice = countPrefixBrackets(FieldTypeName)
+					}
 					if strings.HasPrefix(typeName, "[]") {
-						typeName = strings.Replace(typeName, "[]", "", 1)
+						typeName = strings.Replace(typeName, "[]", "", pf.IsSlice)
 					}
 					isTypeValid := false
 					if convertedTypeName, ok := GoTypeToTSType[typeName]; ok {
@@ -164,14 +171,12 @@ func (c *Converter) ParseStructsInPackage(pkgPath, RequiredStruct string, IsSlic
 							isTypeValid = true
 						}
 					}
-					pf.IsSlice = reflect.TypeOf(st.Field(i).Type()).String() == "*types.Slice"
 					pf.TSName = fieldName
 					pf.TSType = typeName
 					if pf.TSName != "-" {
 						if !isTypeValid && len(typeNameSegments) > 1 && !pf.Var.Embedded() {
-							FieldTypeName := pf.Var.Type().String()
-							if pf.IsSlice && strings.HasPrefix(FieldTypeName, "[]") {
-								FieldTypeName = strings.Replace(FieldTypeName, "[]", "", 1)
+							if pf.IsSlice > 0 {
+								FieldTypeName = strings.Replace(FieldTypeName, "[]", "", pf.IsSlice)
 							}
 							DotSepFSPN := strings.Split(FieldTypeName, ".")
 							StructName := DotSepFSPN[len(DotSepFSPN)-1]
@@ -205,6 +210,19 @@ func (c *Converter) ParseStructsInPackage(pkgPath, RequiredStruct string, IsSlic
 	return RequestedStruct
 }
 
+func countPrefixBrackets(line string) int {
+	count := 0
+	prefix := "[]"
+
+	// Keep checking and removing the prefix "[]" from the start of the line
+	for strings.HasPrefix(line, prefix) {
+		count++
+		line = strings.TrimPrefix(line, prefix)
+	}
+
+	return count
+}
+
 func (c *Converter) getGenericPopulations(structName string) []ParsedField {
 	toRet := []ParsedField{}
 	arrayTrimmedStructName := strings.Trim(structName, "[]")
@@ -214,7 +232,10 @@ func (c *Converter) getGenericPopulations(structName string) []ParsedField {
 		for _, gp := range strings.Split(closingBracketTrimmed, ",") {
 			arrayTrimmed := strings.Trim(gp, "[]")
 			fullNameSegments := strings.Split(arrayTrimmed, ".")
-			isSlice := strings.HasPrefix(gp, "[]")
+			isSlice := 0
+			if strings.HasPrefix(gp, "[]") {
+				isSlice = 1
+			}
 			fieldName := fullNameSegments[len(fullNameSegments)-1]
 			toRet = append(toRet, ParsedField{
 				IsSlice: isSlice,
@@ -313,7 +334,7 @@ func (c *Converter) SetGenericPopulationsToFields(ps ParsedStruct) ParsedStruct 
 
 func (c *Converter) GetFieldAsString(pf ParsedField) string {
 	toRet := "\n" + c.Indent + pf.TSName + ": " + c.postProcessTSTypeName(pf.TSType)
-	if pf.IsSlice {
+	for i := 0; i < pf.IsSlice; i++ {
 		toRet += "[]"
 	}
 	return toRet

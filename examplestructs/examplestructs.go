@@ -127,3 +127,8 @@ type StructWithInlineStruct struct {
 		Test string `json:"test"`
 	}
 }
+
+type Slice3D struct {
+	String3DSlice [][]string
+	Struct3DSlice [][]SimpleStruct
+}
