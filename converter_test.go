@@ -306,7 +306,9 @@ func TestStructWithInlineStruct(t *testing.T) {
 
 	ps := c.ParseStruct(examplestructs.StructWithInlineStruct{})
 	op := c.GetStructAsInterfaceString(ps)
-	expected := ``
+	expected := `export interface StructWithInlineStruct {
+InlineStructData: struct{Test string "json:\"test\""}
+}`
 	if op != expected {
 		t.Errorf(expected)
 		t.Errorf(op)
@@ -320,6 +322,22 @@ func Test3DSlice(t *testing.T) {
 String3DSlice: string[][]
 Struct3DSlice: SimpleStruct[][]
 }`
+	if op != expected {
+		t.Errorf(expected)
+		t.Errorf(op)
+	}
+}
+
+// if a given field has optional tag or omitempty tag, it should be optional in the ts interface
+func TestOptionalField(t *testing.T) {
+	ps := c.ParseStruct(examplestructs.StructWithOptionalField{})
+	op := c.GetStructAsInterfaceString(ps)
+	expected := `export interface StructWithOptionalField {
+required_field: string
+omitempty_field?: string
+optional_field?: string
+}`
+
 	if op != expected {
 		t.Errorf(expected)
 		t.Errorf(op)

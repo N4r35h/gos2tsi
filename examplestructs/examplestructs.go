@@ -132,3 +132,9 @@ type Slice3D struct {
 	String3DSlice [][]string
 	Struct3DSlice [][]SimpleStruct
 }
+
+type StructWithOptionalField struct {
+	RequiredField  string `json:"required_field"`
+	OmitEmptyField string `json:"omitempty_field,omitempty"`
+	OptionalField  string `json:"optional_field" optional:"true"`
+}

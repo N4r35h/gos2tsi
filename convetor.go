@@ -333,7 +333,21 @@ func (c *Converter) SetGenericPopulationsToFields(ps ParsedStruct) ParsedStruct 
 }
 
 func (c *Converter) GetFieldAsString(pf ParsedField) string {
-	toRet := "\n" + c.Indent + pf.TSName + ": " + c.postProcessTSTypeName(pf.TSType)
+	toRet := "\n" + c.Indent + pf.TSName
+
+	// Check if field should be optional
+	if pf.Tag != "" {
+		fieldTag := reflect.StructTag(pf.Tag)
+		jsonTag := fieldTag.Get("json")
+		optionalTag := fieldTag.Get("optional")
+
+		// Make field optional if it has omitempty or optional:"true"
+		if strings.Contains(jsonTag, ",omitempty") || optionalTag == "true" {
+			toRet += "?"
+		}
+	}
+
+	toRet += ": " + c.postProcessTSTypeName(pf.TSType)
 	for i := 0; i < pf.IsSlice; i++ {
 		toRet += "[]"
 	}
