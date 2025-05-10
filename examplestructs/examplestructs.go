@@ -138,3 +138,10 @@ type StructWithOptionalField struct {
 	OmitEmptyField string `json:"omitempty_field,omitempty"`
 	OptionalField  string `json:"optional_field" optional:"true"`
 }
+
+type StructWithPointers struct {
+	IntField   *int                     `json:"int_field"`
+	BoolField  *bool                    `json:"bool_field"`
+	ArrayField *[]string                `json:"array_field"`
+	EntityX    *StructWithOptionalField `json:"entity_x"`
+}

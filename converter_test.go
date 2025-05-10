@@ -343,3 +343,18 @@ optional_field?: string
 		t.Errorf(op)
 	}
 }
+
+func TestPointerFields(t *testing.T) {
+	ps := c.ParseStruct(examplestructs.StructWithPointers{})
+	op := c.GetStructAsInterfaceString(ps)
+	expected := `export interface StructWithPointers {
+int_field: number
+bool_field: boolean
+array_field: []string
+entity_x: StructWithOptionalField
+}`
+	if op != expected {
+		t.Errorf(expected)
+		t.Errorf(op)
+	}
+}

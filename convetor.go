@@ -150,6 +150,9 @@ func (c *Converter) ParseStructsInPackage(pkgPath, RequiredStruct string, IsSlic
 					if strings.HasPrefix(typeName, "[]") {
 						typeName = strings.Replace(typeName, "[]", "", pf.IsSlice)
 					}
+					if strings.HasPrefix(typeName, "*") {
+						typeName = strings.Replace(typeName, "*", "", 1)
+					}
 					isTypeValid := false
 					if convertedTypeName, ok := GoTypeToTSType[typeName]; ok {
 						typeName = convertedTypeName
