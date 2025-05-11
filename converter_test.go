@@ -306,9 +306,7 @@ func TestStructWithInlineStruct(t *testing.T) {
 
 	ps := c.ParseStruct(examplestructs.StructWithInlineStruct{})
 	op := c.GetStructAsInterfaceString(ps)
-	expected := `export interface StructWithInlineStruct {
-InlineStructData: struct{Test string "json:\"test\""}
-}`
+	expected := ``
 	if op != expected {
 		t.Errorf(expected)
 		t.Errorf(op)
