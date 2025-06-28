@@ -2,6 +2,9 @@
 
 **gos2tsi** is a lightweight, reflection-free Go library designed to convert Go structs into TypeScript interfaces. It leverages the `golang.org/x/tools/go/packages` package for static code analysis, ensuring efficient and accurate TypeScript interface generation without the overhead of runtime reflection.
 
+about 50% faster when compared to an alternative
+![benchmark](benchmark.png)
+
 ### Supports
 
 - All primitives types
